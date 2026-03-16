@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur d'Emprunt</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --bg: #f4f7f6;
+            --text: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: var(--primary); }
+        .container {
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #2980b9; }
+        .table-container {
+            width: 100%;
+            max-width: 1000px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: var(--primary);
+            color: white;
+            text-align: center;
+        }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+        .summary { margin-top: 20px; font-weight: bold; font-size: 1.1em; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <h1>Simulateur d'Emprunt Bancaire</h1>
+
+    <div class="container">
+        <div class="form-group">
+            <label for="montant">Montant de l'emprunt (€) :</label>
+            <input type="number" id="montant" value="100000" min="1" step="100">
+        </div>
+        <div class="form-group">
+            <label for="taux">Taux annuel proposé (%) :</label>
+            <input type="number" id="taux" value="4.5" min="0.1" step="0.1">
+        </div>
+        <div class="form-group">
+            <label for="duree">Durée (en années) :</label>
+            <input type="number" id="duree" value="5" min="1">
+        </div>
+        <div class="form-group">
+            <label for="periodicite">Périodicité des remboursements :</label>
+            <select id="periodicite">
+                <option value="12">Mensuelle (12/an)</option>
+                <option value="4">Trimestrielle (4/an)</option>
+                <option value="2">Semestrielle (2/an)</option>
+                <option value="1">Annuelle (1/an)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="mode">Mode de calcul :</label>
+            <select id="mode">
+                <option value="annuites_constantes">Annuités constantes</option>
+                <option value="amortissements_constants">Amortissements constants</option>
+            </select>
+        </div>
+        <button onclick="genererTableau()">Générer le tableau</button>
+    </div>
+
+    <div id="summary" class="summary"></div>
+
+    <div class="table-container">
+        <table id="tableau-emprunt" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Période</th>
+                    <th>Capital restant dû (début)</th>
+                    <th>Intérêts</th>
+                    <th>Amortissement</th>
+                    <th>Annuité / Échéance</th>
+                    <th>Capital restant dû (fin)</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        function formaterMonnaie(valeur) {
+            return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(valeur);
+        }
+
+        function genererTableau() {
+            // Récupération des valeurs du formulaire
+            const V0 = parseFloat(document.getElementById('montant').value);
+            const tauxAnnuel = parseFloat(document.getElementById('taux').value) / 100;
+            const dureeAnnees = parseInt(document.getElementById('duree').value);
+            const k = parseInt(document.getElementById('periodicite').value);
+            const mode = document.getElementById('mode').value;
+
+            // Calcul du nombre total de périodes
+            const nTotal = dureeAnnees * k;
+
+            // Calcul du taux équivalent par période (selon les formules du TD)
+            const tauxPeriode = Math.pow(1 + tauxAnnuel, 1 / k) - 1;
+
+            const tbody = document.querySelector('#tableau-emprunt tbody');
+            tbody.innerHTML = ''; // Réinitialiser le tableau
+
+            let capitalRestant = V0;
+            let totalInterets = 0;
+            let totalAmortissement = 0;
+            let totalAnnuites = 0;
+
+            // Calcul préalable pour annuités constantes
+            let annuiteConstante = 0;
+            if (mode === 'annuites_constantes') {
+                annuiteConstante = V0 * (tauxPeriode / (1 - Math.pow(1 + tauxPeriode, -nTotal)));
+            }
+
+            let amortissementConstant = 0;
+            if (mode === 'amortissements_constants') {
+                amortissementConstant = V0 / nTotal;
+            }
+
+            for (let p = 1; p <= nTotal; p++) {
+                let interets = capitalRestant * tauxPeriode;
+                let amortissement = 0;
+                let echeance = 0;
+
+                if (mode === 'annuites_constantes') {
+                    echeance = annuiteConstante;
+                    amortissement = echeance - interets;
+                } else {
+                    amortissement = amortissementConstant;
+                    echeance = amortissement + interets;
+                }
+
+                let capitalFin = capitalRestant - amortissement;
+
+                if (p === nTotal) {
+                    amortissement = capitalRestant;
+                    echeance = amortissement + interets;
+                    capitalFin = 0;
+                }
+
+                totalInterets += interets;
+                totalAmortissement += amortissement;
+                totalAnnuites += echeance;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align: center;">${p}</td>
+                    <td>${formaterMonnaie(capitalRestant)}</td>
+                    <td>${formaterMonnaie(interets)}</td>
+                    <td>${formaterMonnaie(amortissement)}</td>
+                    <td>${formaterMonnaie(echeance)}</td>
+                    <td>${formaterMonnaie(capitalFin)}</td>
+                `;
+                tbody.appendChild(tr);
+
+                capitalRestant = capitalFin;
+            }
+
+            const trTotal = document.createElement('tr');
+            trTotal.style.fontWeight = 'bold';
+            trTotal.style.backgroundColor = '#ecf0f1';
+            trTotal.innerHTML = `
+                <td style="text-align: center;">Total</td>
+                <td>-</td>
+                <td>${formaterMonnaie(totalInterets)}</td>
+                <td>${formaterMonnaie(totalAmortissement)}</td>
+                <td>${formaterMonnaie(totalAnnuites)}</td>
+                <td>-</td>
+            `;
+            tbody.appendChild(trTotal);
+
+            document.getElementById('tableau-emprunt').style.display = 'table';
+            document.getElementById('summary').innerHTML = `Coût total du crédit (Intérêts) : ${formaterMonnaie(totalInterets)}`;
+        }
+    </script>
+</body>
+</html>
