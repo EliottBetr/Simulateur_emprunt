@@ -1,10 +1,10 @@
 # Simulateur d'Emprunt Bancaire
 
-Ce projet est une application web interactive développée dans le cadre d'un projet universitaire (TD N°2-2 - Management Avancé des Systèmes d'Information). [cite_start]L'objectif est de permettre aux utilisateurs de tester différentes options de financement pour un investissement de manière simple et intuitive, sans nécessiter de connaissances préalables en finance ou en informatique.
+Ce projet est une application web interactive développée dans le cadre d'un projet universitaire. L'objectif est de permettre aux utilisateurs de tester différentes options de financement pour un investissement de manière simple et intuitive, sans nécessiter de connaissances préalables en finance ou en informatique.
 
 ## Fonctionnalités
 
-Le simulateur génère automatiquement un tableau d'amortissement détaillé en fonction des paramètres saisis par l'utilisateur[cite: 145]:
+Le simulateur génère automatiquement un tableau d'amortissement détaillé en fonction des paramètres saisis par l'utilisateur:
 * **Montant de l'emprunt** ($V_0$)
 * **Taux d'intérêt annuel** ($i$)
 * **Durée du prêt** (en années)
